@@ -73,6 +73,25 @@ pipeline {
                 }
             }
         }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                dir('webapp') {
+                    sh """
+                    ./venv/bin/pip install sonarqube-scanner
+                    ./venv/bin/sonarqube-scanner \
+                        -Dsonar.projectKey=flask-app \
+                        -Dsonar.sources=. \
+                        -Dsonar.python.version=3.11 \
+                        -Dsonar.host.url=http://localhost:9000 \
+                        -Dsonar.login=${SONAR_TOKEN}
+                    """
+                }
+                }
+            }
+        }
+
     }
 
     post {
