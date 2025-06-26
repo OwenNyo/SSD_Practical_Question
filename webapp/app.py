@@ -38,6 +38,7 @@ def is_valid_password(password):
         return False
     return True
 
+@csrf.exempt
 @app.route("/", methods=["GET", "POST"])
 def home():
     form = PasswordForm()
@@ -49,6 +50,7 @@ def home():
             return render_template("home.html", form=form, error="Invalid password.")
     return render_template("home.html", form=form)
 
+@csrf.exempt
 @app.route("/welcome")
 def welcome():
     password = request.args.get("password", "")
