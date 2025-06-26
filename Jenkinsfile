@@ -82,7 +82,7 @@ pipeline {
             steps {
                 echo '🔎 Running SonarQube scan...'
                 withSonarQubeEnv("${env.SONARQUBE_ENV}") {
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                         dir('webapp') {
                             sh '''
                                 wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
