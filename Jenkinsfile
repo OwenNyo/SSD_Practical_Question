@@ -10,13 +10,18 @@ pipeline {
     stages {
         stage('Install Dependencies') {
             steps {
-                echo "📦 Installing Python dependencies..."
+                echo "📦 Creating virtual environment and installing dependencies..."
                 dir("${APP_DIR}") {
-                    sh 'pip3 install --upgrade pip'
-                    sh 'pip3 install -r requirements.txt'
+                    sh '''
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                    '''
                 }
             }
         }
+
 
         stage('Lint Code') {
             steps {
