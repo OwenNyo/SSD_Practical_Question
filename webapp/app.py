@@ -7,7 +7,8 @@ import os
 
 app = Flask(__name__)
 app.secret_key = "super-secret-key"  # Required for CSRF
-app.config['WTF_CSRF_ENABLED'] = not os.environ.get('DISABLE_CSRF')
+app.config['WTF_CSRF_ENABLED'] = False
+
 
 csrf = CSRFProtect(app)
 
@@ -50,7 +51,6 @@ def home():
             return render_template("home.html", form=form, error="Invalid password.")
     return render_template("home.html", form=form)
 
-@csrf.exempt
 @app.route("/welcome")
 def welcome():
     password = request.args.get("password", "")
