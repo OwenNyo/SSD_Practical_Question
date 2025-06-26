@@ -40,6 +40,7 @@ class FlaskAppTestCase(unittest.TestCase):
         response = self.client.get('/logout')
         self.assertEqual(response.status_code, 302)
         self.assertIn('/', response.headers['Location'])
-
+        
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
+
