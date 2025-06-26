@@ -90,7 +90,9 @@ pipeline {
                                 ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
                                   -Dsonar.projectKey=flask-app \
                                   -Dsonar.sources=. \
+                                  -Dsonar.exclusions=venv/** \
                                   -Dsonar.python.version=3.11 \
+                                  -Dsonar.sourceEncoding=UTF-8 \
                                   -Dsonar.host.url=http://sonarqube:9000 \
                                   -Dsonar.login=${SONAR_TOKEN}
                             '''
