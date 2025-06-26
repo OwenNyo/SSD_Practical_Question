@@ -27,8 +27,11 @@ pipeline {
             steps {
                 echo "🔍 Linting source files with flake8..."
                 dir("${APP_DIR}") {
-                    sh 'pip3 install flake8'
-                    sh 'flake8 app.py test_app.py || true' // Allow warnings
+                    sh '''
+                        . venv/bin/activate
+                        pip install flake8
+                        flake8 app.py test_webapp.py || true
+                    '''
                 }
             }
         }
