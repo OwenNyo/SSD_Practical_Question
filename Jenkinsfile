@@ -85,6 +85,7 @@ pipeline {
                     withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                         dir('webapp') {
                             sh '''
+                                export DISABLE_CSRF=1
                                 wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
                                 unzip -oq sonar-scanner-cli-5.0.1.3006-linux.zip
                                 ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \

@@ -1,6 +1,9 @@
 <form method="POST">
-    <input type="password" name="password" placeholder="Enter password" required />
-    <button type="submit">Login</button>
-    {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
-  </form>
-  
+  {{ form.hidden_tag() }}
+  {{ form.password.label }}<br>
+  {{ form.password(size=32) }}<br><br>
+  {{ form.submit() }}
+  {% if error %}
+    <p style="color: red;">{{ error }}</p>
+  {% endif %}
+</form>
