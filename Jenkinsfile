@@ -4,7 +4,8 @@ pipeline {
     environment {
         APP_DIR = 'webapp'
         FLASK_PORT = '5000'
-        SERVICE_NAME = 'web' // from docker-compose.yml
+        SERVICE_NAME = 'web'
+        SONARQUBE_ENV = 'SonarQube' // from docker-compose.yml
     }
 
     stages {
@@ -75,21 +76,26 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
+            environment {
+                PATH = "${env.PATH}:${pwd()}/sonar-scanner-5.0.1.3006-linux/bin"
+            }
             steps {
-                withSonarQubeEnv('SonarQube') {
-                withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
-                    dir('webapp') {
-                    sh """
-                        ./venv/bin/pip install sonarqube-scanner
-                        ./venv/bin/sonarqube-scanner \\
-                        -Dsonar.projectKey=flask-app \\
-                        -Dsonar.sources=. \\
-                        -Dsonar.python.version=3.11 \\
-                        -Dsonar.host.url=http://localhost:9000 \\
-                        -Dsonar.login=$SONAR_TOKEN
-                    """
+                echo '🔎 Running SonarQube scan...'
+                withSonarQubeEnv("${env.SONARQUBE_ENV}") {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        dir('webapp') {
+                            sh '''
+                                wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+                                unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip
+                                ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+                                  -Dsonar.projectKey=flask-app \
+                                  -Dsonar.sources=. \
+                                  -Dsonar.python.version=3.11 \
+                                  -Dsonar.host.url=http://localhost:9000 \
+                                  -Dsonar.login=${SONAR_TOKEN}
+                            '''
+                        }
                     }
-                }
                 }
             }
         }
