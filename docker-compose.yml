@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  jenkins:
+    build: ./jenkins
+    user: root
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - appnet
+
+  web:
+    build: ./webapp
+    ports:
+      - "80:5000"
+    volumes:
+      - ./webapp:/app
+    networks:
+      - appnet
+
+volumes:
+  jenkins_home:
+
+networks:
+  appnet:
+
+# 2f7d247f525c4c579d2abf8d1204fc18
