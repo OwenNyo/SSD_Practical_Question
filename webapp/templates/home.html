@@ -1,9 +1,0 @@
-<form method="POST">
-  {{ form.hidden_tag() }}
-  {{ form.password.label }}<br>
-  {{ form.password(size=32) }}<br><br>
-  {{ form.submit() }}
-  {% if error %}
-    <p style="color: red;">{{ error }}</p>
-  {% endif %}
-</form>

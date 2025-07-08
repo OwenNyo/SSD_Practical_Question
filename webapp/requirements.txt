@@ -1,6 +1,0 @@
-Flask==3.1.1
-setuptools>=78.1.1  # patched version to fix vulnerability
-flake8==7.0.0       # for linting
-pip-audit==2.9.0    # for dependency audit
-flask_wtf
-wtforms
