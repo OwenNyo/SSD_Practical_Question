@@ -23,10 +23,11 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Install Chromium and Python dependencies
+    - name: Install Chrome, Chromedriver, and Python dependencies
       run: |
-        sudo apt update
-        sudo apt install -y chromium-browser chromium-chromedriver
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable chromium-chromedriver
+        echo 'CHROME_BIN=/usr/bin/google-chrome-stable' >> $GITHUB_ENV
         pip install -r web/requirements.txt
 
     - name: Start Flask App in Background
@@ -49,7 +50,6 @@ jobs:
       working-directory: ./web
       run: |
         npx eslint . --config eslint.config.mjs || exit 1
-
 
     - name: Run Password Testcase
       working-directory: ./web

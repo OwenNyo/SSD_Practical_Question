@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+import os
 import time
 
 def setup_driver():
@@ -8,7 +10,15 @@ def setup_driver():
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    return webdriver.Chrome(options=options)
+
+    # Use GitHub Actions environment variable (set in workflow)
+    chrome_bin = os.getenv("CHROME_BIN", "/usr/bin/google-chrome-stable")
+    options.binary_location = chrome_bin
+
+    # Point to chromedriver installed by apt
+    service = Service("/usr/bin/chromedriver")
+
+    return webdriver.Chrome(service=service, options=options)
 
 def test_valid_password():
     driver = setup_driver()
