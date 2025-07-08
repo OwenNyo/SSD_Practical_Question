@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  security-events: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -23,17 +27,27 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r web/requirements.txt
+        pip install selenium
+
+    - name: Install Chrome and Chromedriver
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser
+        sudo apt-get install -y chromium-chromedriver
+        sudo ln -s /usr/lib/chromium-browser/chromedriver /usr/bin/chromedriver
 
     - name: Start Flask App in Background
       working-directory: ./web
       run: |
         export FLASK_APP=app.py
-        export FLASK_ENV=development
         nohup flask run --host=127.0.0.1 --port=5000 &
         sleep 5
 
-    - name: Run Integration Test
+    - name: Lint JS files with ESLint
       run: |
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000)
-        echo "Status code: $STATUS"
-        test "$STATUS" = "200"
+        npm install -g eslint
+        npx eslint web/**/*.js || exit 1
+
+    - name: Run Selenium Test
+      working-directory: ./web
+      run: python test_selenium.py

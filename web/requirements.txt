@@ -4,3 +4,4 @@ flake8==7.0.0       # for linting
 pip-audit==2.9.0    # for dependency audit
 flask-wtf
 wtforms
+selenium
