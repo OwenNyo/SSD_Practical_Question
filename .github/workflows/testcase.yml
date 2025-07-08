@@ -48,7 +48,7 @@ jobs:
     - name: Run ESLint on JS files
       working-directory: ./web
       run: |
-        npx eslint . --config eslint.config.js || exit 1
+        npx eslint . --config eslint.config.mjs || exit 1
 
 
     - name: Run Password Testcase
