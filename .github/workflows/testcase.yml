@@ -27,7 +27,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y chromium-browser chromium-chromedriver
-        pip install -r backend/requirements.txt
+        pip install -r web/requirements.txt
 
     - name: Start Flask App in Background
       working-directory: ./web
