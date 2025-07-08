@@ -1,61 +1,53 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-import os
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
+import os
 
-def setup_driver():
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+# --- CONFIG ---
+BASE_URL = "http://localhost:5000"
+CHROME_PATH = os.getenv("CHROME_BIN", "/usr/bin/google-chrome-stable")
 
-    # Use GitHub Actions environment variable (set in workflow)
-    chrome_bin = os.getenv("CHROME_BIN", "/usr/bin/google-chrome-stable")
-    options.binary_location = chrome_bin
+# --- SETUP ---
+options = Options()
+options.add_argument("--headless")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+options.binary_location = CHROME_PATH
+driver = webdriver.Chrome(options=options)
 
-    # Point to chromedriver installed by apt
-    service = Service("/usr/bin/chromedriver")
+wait = WebDriverWait(driver, 10)
 
-    return webdriver.Chrome(service=service, options=options)
-
-def test_valid_password():
-    driver = setup_driver()
+def test_password(input_pw, should_pass=True):
     try:
-        driver.get("http://127.0.0.1:5000")
+        driver.get(BASE_URL)
+        wait.until(EC.presence_of_element_located((By.NAME, "password")))
 
         password_input = driver.find_element(By.NAME, "password")
-        password_input.send_keys("Valid123!")
+        password_input.clear()
+        password_input.send_keys(input_pw)
 
         driver.find_element(By.TAG_NAME, "button").click()
         time.sleep(1)
 
-        assert "welcome" in driver.current_url.lower(), "❌ Did not redirect to welcome page for valid password"
-        assert "Your password:" in driver.page_source, "❌ Welcome message missing for valid password"
+        current_url = driver.current_url
+        page_source = driver.page_source.lower()
 
-        print("✅ Valid password test passed.")
-    finally:
-        driver.quit()
+        if should_pass:
+            assert "welcome" in current_url.lower(), f"❌ Expected redirect, got {current_url}"
+            assert "your password:" in page_source, "❌ Missing welcome message."
+            print(f"✅ Passed test with VALID password: '{input_pw}'")
+        else:
+            assert "welcome" not in current_url.lower(), "❌ Redirected despite INVALID password"
+            assert "invalid password" in page_source, "❌ Missing error message for invalid password."
+            print(f"✅ Passed test with INVALID password: '{input_pw}'")
+    except Exception as e:
+        print(f"❌ Error testing password '{input_pw}':", e)
 
-def test_invalid_password():
-    driver = setup_driver()
-    try:
-        driver.get("http://127.0.0.1:5000")
+# --- RUN TESTS ---
+test_password("Valid123!", should_pass=True)
+test_password("bad", should_pass=False)
 
-        password_input = driver.find_element(By.NAME, "password")
-        password_input.send_keys("bad")  # too short, lacks requirements
-
-        driver.find_element(By.TAG_NAME, "button").click()
-        time.sleep(1)
-
-        assert "welcome" not in driver.current_url.lower(), "❌ Redirected with invalid password"
-        assert "Invalid password." in driver.page_source, "❌ Missing error message for invalid password"
-
-        print("✅ Invalid password test passed.")
-    finally:
-        driver.quit()
-
-if __name__ == "__main__":
-    test_valid_password()
-    test_invalid_password()
+driver.quit()
