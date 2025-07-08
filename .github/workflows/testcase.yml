@@ -36,10 +36,20 @@ jobs:
         nohup flask run --host=127.0.0.1 --port=5000 &
         sleep 5
 
-    - name: Lint JS files with ESLint
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install ESLint
+      working-directory: ./web
+      run: npm install eslint
+
+    - name: Run ESLint on JS files
+      working-directory: ./web
       run: |
-        npm install -g eslint
-        npx eslint web/**/*.js || exit 1
+        npx eslint . --config eslint.config.js || exit 1
+
 
     - name: Run Password Testcase
       working-directory: ./web
