@@ -23,18 +23,11 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Install Dependencies
+    - name: Install Chromium and Python dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r web/requirements.txt
-        pip install selenium
-
-    - name: Install Chrome and Chromedriver
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y chromium-browser
-        sudo apt-get install -y chromium-chromedriver
-        sudo ln -s /usr/lib/chromium-browser/chromedriver /usr/bin/chromedriver
+        sudo apt update
+        sudo apt install -y chromium-browser chromium-chromedriver
+        pip install -r backend/requirements.txt
 
     - name: Start Flask App in Background
       working-directory: ./web
@@ -48,6 +41,6 @@ jobs:
         npm install -g eslint
         npx eslint web/**/*.js || exit 1
 
-    - name: Run Selenium Test
+    - name: Run Password Testcase
       working-directory: ./web
       run: python test_selenium.py
