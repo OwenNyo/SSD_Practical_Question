@@ -1,20 +1,44 @@
-name: Build
+name: SonarQube Self-Hosted Scan
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build and analyze
+  sonarqube:
     runs-on: ubuntu-latest
-    
+
+    services:
+      sonarqube:
+        image: sonarqube:community
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd="curl -s http://localhost:9000/api/system/health | grep -q UP"
+          --health-interval=10s
+          --health-timeout=10s
+          --health-retries=20
+        env:
+          SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: SonarSource/sonarqube-scan-action@v5
+          fetch-depth: 0
+
+      - name: Wait for SonarQube to be UP
+        run: |
+          echo "Waiting for SonarQube..."
+          for i in {1..30}; do
+            STATUS=$(curl -s http://localhost:9000/api/system/status | jq -r .status || echo "DOWN")
+            echo "Status: $STATUS"
+            if [ "$STATUS" = "UP" ]; then break; fi
+            sleep 5
+          done
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
