@@ -1,60 +1,65 @@
-name: SonarQube Analysis
+name: Local SonarQube Analysis
 
 on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  sonarqube:
+  sonar_local:
     runs-on: ubuntu-latest
 
-    services:
-      sonarqube:
-        image: sonarqube:latest
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd="curl -s http://localhost:9000/api/system/health | grep -q 'UP'" 
-          --health-interval=10s 
-          --health-timeout=10s 
-          --health-retries=30
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Wait for SonarQube to be UP
-      run: |
-        echo "Waiting for SonarQube to be healthy..."
-        for i in {1..20}; do
-          STATUS=$(curl -s http://localhost:9000/api/system/health | jq -r '.status')
-          if [ "$STATUS" == "UP" ]; then echo "✅ SonarQube is ready"; break; fi
-          echo "⏳ Waiting... ($i)"
-          sleep 5
-        done
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: '3.11'
 
-    - name: Install Scanner and Dependencies
+    - name: Install dependencies
       run: |
-        pip install sonarqube-scanner
-        sudo apt-get install -y jq  # required for waiting step
+        python -m pip install --upgrade pip
+        pip install -r web/requirements.txt
 
-    - name: Run SonarQube Scan
+    - name: Start SonarQube container manually
+      run: |
+        docker run -d --name sonarqube \
+          -p 9000:9000 \
+          -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+          sonarqube:latest
+
+    - name: Wait for SonarQube to become healthy
+      run: |
+        echo "Waiting for SonarQube to become healthy..."
+        for i in {1..30}; do
+          status=$(curl -s http://localhost:9000/api/system/health | jq -r .health || echo "starting")
+          echo "Health: $status"
+          if [ "$status" = "GREEN" ]; then
+            echo "✅ SonarQube is healthy!"
+            break
+          fi
+          sleep 5
+        done
+
+    - name: Install SonarScanner CLI
+      run: |
+        wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+        unzip sonar-scanner-cli-5.0.1.3006-linux.zip
+        echo "$PWD/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
+
+    - name: Run SonarScanner locally
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
         sonar-scanner \
           -Dsonar.projectKey=flask-app \
           -Dsonar.sources=web \
-          -Dsonar.language=py \
           -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=${SONAR_TOKEN}
+          -Dsonar.login=$SONAR_TOKEN
+
 
 
 # 2f7d247f525c4c579d2abf8d1204fc18
