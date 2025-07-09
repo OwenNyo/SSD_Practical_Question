@@ -1,65 +1,23 @@
-name: SonarQube Localhost Scan
+name: Build
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  sonarqube:
+  build:
+    name: Build and analyze
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install Python dependencies
-      run: |
-        pip install -r web/requirements.txt
-
-    - name: Start SonarQube in background
-      run: |
-        docker run -d --name sonarqube \
-          -p 9000:9000 \
-          -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-          sonarqube:community
-
-    - name: Wait for SonarQube to be ready
-      run: |
-        echo "Waiting for SonarQube to be UP..."
-        for i in {1..30}; do
-          STATUS=$(curl -s http://localhost:9000/api/system/status | jq -r .status || echo "DOWN")
-          echo "Current status: $STATUS"
-          if [ "$STATUS" = "UP" ]; then
-            echo "SonarQube is ready!"
-            break 
-          fi
-          sleep 5
-        done
-
-    - name: Install SonarScanner
-      run: |
-        wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-        unzip sonar-scanner-cli-5.0.1.3006-linux.zip
-        echo "$PWD/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
-
-    - name: Run SonarScanner
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: |
-        export SONAR_SCANNER_OPTS="-Xmx512m"
-        sonar-scanner \
-          -Dsonar.projectKey=flask-app \
-          -Dsonar.sources=web \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.token=$SONAR_TOKEN \
-          -X
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
 # 2f7d247f525c4c579d2abf8d1204fc18
 
