@@ -42,20 +42,6 @@ jobs:
           fi
           sleep 5
         done
-    
-    - name: Wait for SonarQube to be fully ready
-      run: |
-        echo "Waiting for SonarQube full readiness..."
-        for i in {1..20}; do
-          READY=$(curl -s -u admin:Password@123 http://localhost:9000/api/webservices/list | jq -r '.components | length' || echo "0")
-          echo "API response components: $READY"
-          if [ "$READY" -gt 0 ]; then
-            echo "SonarQube is fully ready!"
-            break
-          fi
-          sleep 5
-        done
-
 
     - name: Install SonarScanner
       run: |
@@ -72,7 +58,7 @@ jobs:
           -Dsonar.projectKey=flask-app \
           -Dsonar.sources=web \
           -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=$SONAR_TOKEN \
+          -Dsonar.token=$SONAR_TOKEN \
           -X
 
 # 2f7d247f525c4c579d2abf8d1204fc18
