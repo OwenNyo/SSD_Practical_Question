@@ -1,0 +1,64 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sonarqube:
+    runs-on: ubuntu-latest
+
+    services:
+      sonarqube:
+        image: sonarqube:latest
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd="curl -s http://localhost:9000/api/system/health | grep -q 'UP'" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=20
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Wait for SonarQube to be UP
+      run: |
+        echo "Waiting for SonarQube to be healthy..."
+        for i in {1..20}; do
+          STATUS=$(curl -s http://localhost:9000/api/system/health | jq -r '.status')
+          if [ "$STATUS" == "UP" ]; then echo "✅ SonarQube is ready"; break; fi
+          echo "⏳ Waiting... ($i)"
+          sleep 5
+        done
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install Scanner and Dependencies
+      run: |
+        pip install sonarqube-scanner
+        sudo apt-get install -y jq  # required for waiting step
+
+    - name: Run SonarQube Scan
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        sonar-scanner \
+          -Dsonar.projectKey=flask-app \
+          -Dsonar.sources=web \
+          -Dsonar.language=py \
+          -Dsonar.host.url=http://localhost:9000 \
+          -Dsonar.login=${SONAR_TOKEN}
+
+
+# 2f7d247f525c4c579d2abf8d1204fc18
+
+# Sonarqube password is Password@123
+
+# squ_d0caf2a09fecffdcf4b5696908924c29b8d61cbb
