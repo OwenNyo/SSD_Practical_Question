@@ -1,30 +1,56 @@
-name: Build
+name: Local SonarQube Scan
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
 
 jobs:
-  build:
-    name: Build and analyze
+  sonarqube:
     runs-on: ubuntu-latest
-    
+
+    services:
+      sonarqube:
+        image: sonarqube:community
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd="curl -f http://localhost:9000/api/system/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Wait for SonarQube to be healthy
+        run: |
+          echo "Waiting for SonarQube..."
+          until curl -s http://localhost:9000/api/system/status | grep -q '"status":"UP"'; do
+            sleep 5
+          done
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: SonarSource/sonarqube-scan-action@v5
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r web/requirements.txt
+          pip install sonarqube-scanner
+
+      - name: Run SonarQube Scanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      # If you wish to fail your job when the Quality Gate is red, uncomment the
-      # following lines. This would typically be used to fail a deployment.
-      # - uses: SonarSource/sonarqube-quality-gate-action@v1
-      #   timeout-minutes: 5
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=flask-app \
+            -Dsonar.sources=./web \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.python.version=3.11 \
+            -Dsonar.login=$SONAR_TOKEN
+
 
 
 # 2f7d247f525c4c579d2abf8d1204fc18
