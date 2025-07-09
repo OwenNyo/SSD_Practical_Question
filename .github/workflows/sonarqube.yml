@@ -1,65 +1,30 @@
-name: Local SonarQube Analysis
+name: Build
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-  workflow_dispatch:
+    branches:
+      - main
+
 
 jobs:
-  sonar_local:
+  build:
+    name: Build and analyze
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r web/requirements.txt
-
-    - name: Start SonarQube container manually
-      run: |
-        docker run -d --name sonarqube \
-          -p 9000:9000 \
-          -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-          sonarqube:latest
-
-    - name: Wait for SonarQube to become healthy
-      run: |
-        echo "Waiting for SonarQube to become healthy..."
-        for i in {1..30}; do
-          status=$(curl -s http://localhost:9000/api/system/health | jq -r .health || echo "starting")
-          echo "Health: $status"
-          if [ "$status" = "GREEN" ]; then
-            echo "✅ SonarQube is healthy!"
-            break
-          fi
-          sleep 5
-        done
-
-    - name: Install SonarScanner CLI
-      run: |
-        wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-        unzip sonar-scanner-cli-5.0.1.3006-linux.zip
-        echo "$PWD/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
-
-    - name: Run SonarScanner locally
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: |
-        sonar-scanner \
-          -Dsonar.projectKey=flask-app \
-          -Dsonar.sources=web \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=$SONAR_TOKEN
-
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # If you wish to fail your job when the Quality Gate is red, uncomment the
+      # following lines. This would typically be used to fail a deployment.
+      # - uses: SonarSource/sonarqube-quality-gate-action@v1
+      #   timeout-minutes: 5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 
 # 2f7d247f525c4c579d2abf8d1204fc18
