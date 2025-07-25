@@ -54,10 +54,17 @@ jobs:
       working-directory: ./web
       run: npm install eslint
 
-    - name: Run ESLint on JS files
+    - name: Run ESLint and generate text report
       working-directory: ./web
       run: |
-        npx eslint . --config eslint.config.mjs || exit 1
+        mkdir -p reports
+        npx eslint . --config eslint.config.mjs -f stylish > reports/eslint-report.txt || exit 1
+
+    - name: Upload ESLint Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: eslint-report
+        path: web/reports/eslint-report.txt
 
     - name: Run Selenium Password Tests
       working-directory: ./web
